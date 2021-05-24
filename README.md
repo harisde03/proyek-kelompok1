@@ -1,5 +1,6 @@
 # proyek-kelompok1
 Repository ini merupakan projek kelompok kami, yaitu membuat permainan Who Wants To Be a Millionaire. Dimana kami mengimplementasikan semua yang telah kami pelajari selama satu semester ini.
+Link Video Demo dan Penjelasan YouTube: https://youtu.be/74gr5zFekcE
 ## Anggota:
 1. 2008107010059 Haris Daffa
 2. 2008107010033 Muhammad Aulia Hasansyah
