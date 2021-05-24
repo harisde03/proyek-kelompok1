@@ -2,41 +2,159 @@
 #include<stdlib.h>
 #include<string.h>
 
-#include"display.h"     // Berisi clearscreen & gotoxy()
+#include"display.h"
+#include"define.h"
+#include"sistem.h"
 
-void enterer();         // Fungsi "tekan enter untuk lanjut"
-void drawBox();         // Gambar kotak pertanyaan dan hadiah
-void welcomeScreen();   // Selamat Datang ke WWTBM
+// Function Prototypes
+void enterer();
+void draw_box();
+void minta_bantuan(char jawaban, int no_soal);
 
-void define_soal();
-void define_hadiah();
+int main(int argc, char *argv[]) {
+    // Menanyakan apabila login berhasil atau gagal
+    if (sistem_login(argc, argv)) {
+        printf("Login anda gagal.\n");
+        return EXIT_FAILURE;
+    }
 
-typedef struct h {
-    char *nominal;
-} Hadiah;
-Hadiah hadiah[15];
 
-typedef struct s {
-    int nomor;
-    char *soal;
-    float a;
-    float b;
-    float c;
-    float d;
-} Soalan;
-Soalan soal[15];
-
-int main() {
-    
+    // Mendefinisikan Soal, Hadiah, dan Bantuan
     define_soal();
     define_hadiah();
-    
-    drawBox();
-    printf("\tSoal Nomor %d\n", soal[1].nomor);
-    printf("%s", soal[1].soal);
+    define_bantuan();
 
+
+    // Menampilkan Tampilan Selamat Datang
+    char siap[4];
+
+    draw_box();
+
+    printf("\tSelamat Datang di Kursi Panas Anda.\n\n");
+    printf("\tAda 15 pertanyaan yang harus Anda jawab dengan benar\n");
+    printf("\tuntuk mendapatkan Rp 1 Milyar.\n");
+    printf("\tNilai paling rendah adalah Rp 50.000.\n");
+    printf("\tTerdapat 3 titik aman yang akan anda lalui yaitu pada\n");
+    printf("\tRp 1 Juta, Rp 32 Juta, dan Rp 1 Milyar.\n");
+    printf("\tSelama perjalanan, Anda dibekali 3 bantuan\n");
+    printf("\t(1) Bantuan CALL (2) Bantuan 50:50 (3) Bantuan POLL.\n");
+    printf("\tJika anda siap untuk menjawab ketik \"SIAP\": ");
+    scanf("%s", siap);
+
+    if (!strcmp(siap, "SIAP")) {
+        printf("\tTerima Kasih Atas Antusiasnya. ");
+    } else {
+        printf("\tBaiklah. ");
+    }
+
+    enterer();
+
+
+    // Menanyakan Semua pertanyaan.
+    char jawaban, balasan;
+    int i = 0;
+    char titik_aman[15] = "0";
+
+    do {
+        for (; i < 15; i++) {
+            hadiah[i].didapat = "* ";
+
+            draw_box();
+
+            printf("\tSoal Nomor %d.\n\n", soal[i].nomor);
+            printf("%s\n", soal[i].soal);
+
+            printf("\tMasukkan Jawaban Anda [a/b/c/d][1/2/3][Q]: ");
+            scanf(" %c", &jawaban);
+
+            if ((jawaban >= 'A') && (jawaban <= 'Z')) {
+                jawaban += 32;
+            }
+
+            if (jawaban == 'a') {
+                if (soal[i].a == 0.50) hadiah[i].didapat = "**";
+            } else if (jawaban == 'b') {
+                if (soal[i].b == 0.50) hadiah[i].didapat = "**";
+            } else if (jawaban == 'c') {
+                if (soal[i].c == 0.50) hadiah[i].didapat = "**";
+            } else if (jawaban == 'd') {
+                if (soal[i].d == 0.50) hadiah[i].didapat = "**";
+            } else if ((jawaban == '1') || (jawaban == '2') || (jawaban == '3')) {
+                minta_bantuan(jawaban, i);
+                i--;
+                continue;
+            } else if (jawaban == 'q') {
+                hadiah[i].didapat = "  ";
+                (i == 0) ? i = 0 : i-1;
+                break;
+            } else {
+                i--;
+                continue;
+            }
+
+            if (!strcmp(hadiah[i].didapat, "**")) {
+                printf("\tSelamat! Rp %s ", hadiah[i].nominal);
+                if (i == 4 || i == 9) {
+                    printf("\n\tAnda sudah berada di titik aman! ");
+                    strcpy(titik_aman, hadiah[i].nominal);
+                }
+                enterer();
+                continue;
+            }
+
+            hadiah[i].didapat = "XX";
+            break;
+        }
+
+        if (i == 15) {
+            draw_box();
+            printf("\tSelamat! Anda berhasil menjawab semua pertanyaan dengan\n");
+            printf("\tbenar!\n\n");
+            printf("\tTerima Kasih Dari kami sebesar-besarnya karena sudah mau\n");
+            printf("\tmemberikan waktu berharganya untuk menjawab pertanyaan\n");
+            printf("\tyang kami sediakan.\n");
+            printf("\t\t\t\t\t\t~Kelompok 1~ ");
+            break;
+        }
+
+        if (jawaban == 'q') {
+            printf("\tApakah Anda ingin meninggalkan permainan dan akan\n");
+            printf("\tmembawa pulang Rp %s ? [y/n]: ", (i == 0) ? "0" : hadiah[i-1].nominal);
+            scanf(" %c", &balasan);
+
+            if (balasan == 'y') {
+                draw_box();
+                printf("\tBaiklah, Terima Kasih sudah bergabung di Acara ini.\n");
+                printf("\tSemoga Rp %s yang dibawa pulang akan berguna. ", (i == 0) ? "0" : hadiah[i-1].nominal);
+                enterer();
+                break;
+            }
+        }
+
+        if (!strcmp(hadiah[i].didapat, "XX")) {
+            printf("\tMohon Maaf! Jawaban Anda kurang tepat.\n");
+            printf("\tAnda akan membawa pulang Rp %s ", titik_aman);
+            enterer();
+
+            draw_box();
+            printf("\tApakah anda ingin mencoba lagi? [y/n]: ");
+            scanf(" %c", &balasan);
+
+            if (balasan == 'y') {
+                strcpy(titik_aman, "0");
+                define_hadiah();
+                define_bantuan();
+                i = 0;
+            } else {
+                break;
+            }
+        }
+    } while (1);
+
+
+    // Memindahkan Kursor kembali kebawah kotak
     gotoxy(0,24);
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void enterer() {
@@ -45,231 +163,126 @@ void enterer() {
     printf("\n");
 }
 
-void drawBox() {
-	int i;
+void draw_box() {
+    int i;
+
     system(CLEAR);
     gotoxy(0,0);
+
     printf("+----------------------------------------------------------------+-----------------------+\n");
     printf("|                                                                |+----+  +-----+  +----+|\n");
-    printf("|    * W H O  W A N T S  T O  B E  A  M I L L I O N A I R E *    ||    |  |     |  |    ||\n");
+    printf("|    * W H O  W A N T S  T O  B E  A  M I L L I O N A I R E *    ||%s|  |%s|  |%s||\n", bantuan[0].nama, bantuan[1].nama, bantuan[2].nama);
     printf("|                                                                |+----+  +-----+  +----+|\n");
     printf("+-----+----------------------------------------------------------+-----------------------+\n");
     printf("|     |\t\t\t\t\t\t\t\t |                  +--+ |\n");
 
     for (i = 14; i >= 0; i--) {
-        printf("|     |\t\t\t\t\t\t\t\t | Rp %13s |  | |\n", hadiah[i].nominal);
+        printf("|     |\t\t\t\t\t\t\t\t | Rp %13s |%s| |\n", hadiah[i].nominal, hadiah[i].didapat);
     }
 
     printf("|     |\t\t\t\t\t\t\t\t |                  +--+ |\n");
     printf("+-----+----------------------------------------------------------+-----------------------+\n");
+
     gotoxy(0,7);
 }
 
-void welcomeScreen() {
-    char siap[4];
-    drawBox();
-    printf("\tSelamat Datang di Kursi Panas Anda.\n\n" \
-           "\tAda 15 pertanyaan yang harus Anda jawab dengan benar\n" \
-           "\tuntuk mendapatkan Rp 1 Milyar.\n" \
-           "\tNilai paling rendah adalah Rp 50.000.\n" \
-           "\tTerdapat 3 titik aman yang akan anda lalui yaitu pada\n" \
-           "\tRp 1 Juta, Rp 32 Juta, dan Rp 1 Milyar.\n" \
-           "\tJika anda siap untuk menjawab ketik \"SIAP\": "
-    );
-    scanf("%s", siap);
-    if (!strcmp(siap, "SIAP")) {
-        printf("\tTerima Kasih Atas Antusiasnya. ");
-    } else {
-        printf("\tBaiklah. ");
+char *sort_jawaban(int no_soal) {
+    if (soal[no_soal].a == 0.50) {
+        if (soal[no_soal].b == 0.25) return "AB";
+        else if (soal[no_soal].c == 0.25) return "AC";
+        else if (soal[no_soal].d == 0.25) return "AD";
+    } else if (soal[no_soal].b == 0.50) {
+        if (soal[no_soal].a == 0.25) return "BA";
+        else if (soal[no_soal].c == 0.25) return "BC";
+        else if (soal[no_soal].d == 0.25) return "BD";
+    } else if (soal[no_soal].c == 0.50) {
+        if (soal[no_soal].a == 0.25) return "CA";
+        else if (soal[no_soal].b == 0.25) return "CB";
+        else if (soal[no_soal].d == 0.25) return "CD";
+    } else if (soal[no_soal].d == 0.50) {
+        if (soal[no_soal].a == 0.25) return "DA";
+        else if (soal[no_soal].b == 0.25) return "DB";
+        else if (soal[no_soal].c == 0.25) return "DC";
     }
+
+    return "??";
+}
+
+void bantuan_call(int no_soal) {
+    char *jawaban = sort_jawaban(no_soal);
+
+    printf("\tAnda: Wahai sahabatku, bantu aku menjawab pertanyaan ini\n");
+    printf("\tSahabatmu: Oh... tentu saja! jawabannya adalah %c ", jawaban[0]);
+
     enterer();
 }
 
-void define_soal() {
-    soal[0].nomor = 1;
-    soal[0].soal  = "\tSiapakah nama presiden pertama Indonesia?\n" \
-                    "\tA. Soeharto\n" \
-                    "\tB. Joko Widodo\n" \
-                    "\tC. Soekarno\n" \
-                    "\tD. Raffi Ahmad\n";
-    soal[0].a = 0.20;
-    soal[0].b = 0.25;
-    soal[0].c = 0.50;
-    soal[0].d = 0.05;
+void bantuan_50(int no_soal) {
+    char *jawaban = sort_jawaban(no_soal);
 
-    soal[1].nomor = 2;
-    soal[1].soal  = "\tApa nama ibukota Indonesia?\n" \
-                    "\tA. Jakarta\n" \
-                    "\tB. Banda Aceh\n" \
-                    "\tC. Bali\n" \
-                    "\tD. Papua\n";
-    soal[1].a = 0.50;
-    soal[1].b = 0.20;
-    soal[1].c = 0.25;
-    soal[1].d = 0.05;
+    if (jawaban[0] > jawaban[1]) {
+        printf("\tBerikut 2 jawaban yang paling memungkinkan: %c & %c ", jawaban[1], jawaban[0]);
+    } else {
+        printf("\tBerikut 2 jawaban yang paling memungkinkan: %c & %c ", jawaban[0], jawaban[1]);
+    }
 
-    soal[2].nomor = 3;
-    soal[2].soal  = "\tAda berapa provinsi di Indonesia?\n" \
-                    "\tA. 20 Provinsi\n" \
-                    "\tB. 50 Provinsi\n" \
-                    "\tC. 35 Provinsi\n" \
-                    "\tD. 34 Provinsi\n";
-    soal[2].a = 0.05;
-    soal[2].b = 0.20;
-    soal[2].c = 0.25;
-    soal[2].d = 0.50;
-
-    soal[3].nomor = 4;
-    soal[3].soal  = "\tAda berapa agama yang diakui di Indonesia?\n" \
-                    "\tA. 2 Agama\n" \
-                    "\tB. 6 Agama\n" \
-                    "\tC. 7 Agama\n" \
-                    "\tD. 1 Agama\n";
-    soal[3].a = 0.20;
-    soal[3].b = 0.50;
-    soal[3].c = 0.25;
-    soal[3].d = 0.05;
-
-    soal[4].nomor = 5;
-    soal[4].soal  = "\tMayoritas penduduk Indonesia beragama?\n" \
-                    "\tA. Islam\n" \
-                    "\tB. Hindu\n" \
-                    "\tC. Kristen\n" \
-                    "\tD. Buddha\n";
-    soal[4].a = 0.50;
-    soal[4].b = 0.20;
-    soal[4].c = 0.25;
-    soal[4].d = 0.05;
-
-    soal[5].nomor = 6;
-    soal[5].soal  = "\tDisebut hewan apakah yang hidup di dua alam sekaligus?\n" \
-                    "\tA. Aves\n" \
-                    "\tB. Reptil\n" \
-                    "\tC. Mamalia\n" \
-                    "\tD. Amfibi\n";
-    soal[5].a = 0.05;
-    soal[5].b = 0.20;
-    soal[5].c = 0.25;
-    soal[5].d = 0.50;
-
-    soal[6].nomor = 7;
-    soal[6].soal  = "\tSiapakah ilmuwan yang mendapatkan gelar bapak Sains\n" \
-                    "\tModern?\n" \
-                    "\tA. Ibnu Haitami\n" \
-                    "\tB. Albert Einstein\n" \
-                    "\tC. Galileo Galilei\n" \
-                    "\tD. Alkhawarizmi\n";
-    soal[6].a = 0.20;
-    soal[6].b = 0.25;
-    soal[6].c = 0.50;
-    soal[6].d = 0.05;
-
-    soal[7].nomor = 8;
-    soal[7].soal  = "\tHewan apakah yang memiliki kemampuan mengubah warna\n" \
-                    "\tsesuai dengan lingkungannya?\n" \
-                    "\tA. Cicak\n" \
-                    "\tB. Bunglon\n" \
-                    "\tC. Tokek\n" \
-                    "\tD. Kadal\n";
-    soal[7].a = 0.05;
-    soal[7].b = 0.50;
-    soal[7].c = 0.25;
-    soal[7].d = 0.20;
-
-    soal[8].nomor = 9;
-    soal[8].soal  = "\tIlmu yang mempelajari tentang peta disebut?\n" \
-                    "\tA. Anatomi\n" \
-                    "\tB. Antropologi\n" \
-                    "\tC. Kartografi\n" \
-                    "\tD. Geografi\n";
-    soal[8].a = 0.05;
-    soal[8].b = 0.25;
-    soal[8].c = 0.50;
-    soal[8].d = 0.20;
-
-    soal[9].nomor = 10;
-    soal[9].soal  = "\tTokoh penentang dalam sebuah karya sastra disebut?\n" \
-                    "\tA. Protagonis\n" \
-                    "\tB. Antagonis\n" \
-                    "\tC. Tritagonis\n" \
-                    "\tD. Intrinsik\n";
-    soal[9].a = 0.20;
-    soal[9].b = 0.50;
-    soal[9].c = 0.25;
-    soal[9].d = 0.05;
-
-    soal[10].nomor = 11;
-    soal[10].soal  = "\tGunung tertinggi di dunia adalah?\n" \
-                     "\tA. Gunung Everest\n" \
-                     "\tB. Gunung Denali\n" \
-                     "\tC. Gunung Kilimanjaro\n" \
-                     "\tD. Gunung Elbrus\n";
-    soal[10].a = 0.50;
-    soal[10].b = 0.20;
-    soal[10].c = 0.25;
-    soal[10].d = 0.05;
-
-    soal[11].nomor = 12;
-    soal[11].soal  = "\tKota \"Kembang\" adalah sebutan untuk kota?\n" \
-                     "\tA. Bogor\n" \
-                     "\tB. Bandung\n" \
-                     "\tC. Yogyakarta\n" \
-                     "\tD. Palembang\n";
-    soal[11].a = 0.20;
-    soal[11].b = 0.50;
-    soal[11].c = 0.25;
-    soal[11].d = 0.05;
-
-    soal[12].nomor = 13;
-    soal[12].soal  = "\tTokoh utama film \"Toy Story\" adalah?\n" \
-                     "\tA. Bunny\n" \
-                     "\tB. Buzz\n" \
-                     "\tC. Woody\n" \
-                     "\tD. Jessie\n";
-    soal[12].a = 0.05;
-    soal[12].b = 0.20;
-    soal[12].c = 0.50;
-    soal[12].d = 0.25;
-
-    soal[13].nomor = 14;
-    soal[13].soal  = "\tBurung yang menjadi lambang kantor pos indonesia adalah\n" \
-                     "\tburung?\n" \
-                     "\tA. Sriti\n" \
-                     "\tB. Wallet\n" \
-                     "\tC. Kenari\n" \
-                     "\tD. Beo\n";
-    soal[13].a = 0.25;
-    soal[13].b = 0.50;
-    soal[13].c = 0.20;
-    soal[13].d = 0.05;
-
-    soal[14].nomor = 15;
-    soal[14].soal  = "\tApakah sebutan untuk hewan yang beraktivitas di malam\n" \
-                     "\thari?\n" \
-                     "\tA. Nokturnal\n" \
-                     "\tB. Diurnal\n" \
-                     "\tC. Normal\n" \
-                     "\tD. Mamalia\n";
-    soal[14].a = 0.50;
-    soal[14].b = 0.25;
-    soal[14].c = 0.05;
-    soal[14].d = 0.20;
+    enterer();
 }
-    
-void define_hadiah() {
-    hadiah[0].nominal  = "50.000";
-    hadiah[1].nominal  = "125.000";
-    hadiah[2].nominal  = "250.000";
-    hadiah[3].nominal  = "500.000";
-    hadiah[4].nominal  = "1.000.000";
-    hadiah[5].nominal  = "2.000.000";
-    hadiah[6].nominal  = "4.000.000";
-    hadiah[7].nominal  = "8.000.000";
-    hadiah[8].nominal  = "16.000.000";
-    hadiah[9].nominal  = "32.000.000";
-    hadiah[10].nominal = "64.000.000";
-    hadiah[11].nominal = "125.000.000";
-    hadiah[12].nominal = "250.000.000";
-    hadiah[13].nominal = "500.000.000";
-    hadiah[14].nominal = "1.000.000.000";
+
+void bantuan_poll(int no_soal) {
+    int i;
+    int a = 100 * soal[no_soal].a;
+    int b = 100 * soal[no_soal].b;
+    int c = 100 * soal[no_soal].c;
+    int d = 100 * soal[no_soal].d;
+
+    printf("\tBerikut hasil poll yang dijawab oleh para pemirsa:");
+
+    printf("\n\tA :");
+    for (i = 0; i < a; i += 5) printf("o");
+    printf("\n\tB :");
+    for (i = 0; i < b; i += 5) printf("o");
+    printf("\n\tC :");
+    for (i = 0; i < c; i += 5) printf("o");
+    printf("\n\tD :");
+    for (i = 0; i < d; i += 5) printf("o");
+
+    printf(" ");
+    enterer();
+}
+
+void minta_bantuan(char jawaban, int no_soal) {
+    char balasan;
+
+    if (jawaban == '1' && bantuan[0].usage == 0) {
+        printf("\tApakah anda ingin menggunakan bantuan CALL [y/n]? ");
+        scanf(" %c", &balasan);
+
+        if (balasan == 'y') {
+            bantuan_call(no_soal);
+            bantuan[0].nama = "    ";
+            bantuan[0].usage = 1;
+        }
+    } else if (jawaban == '2' && bantuan[1].usage == 0) {
+        printf("\tApakah anda ingin menggunakan bantuan 50:50 [y/n]? ");
+        scanf(" %c", &balasan);
+
+        if (balasan == 'y') {
+            bantuan_50(no_soal);
+            bantuan[1].nama = "     ";
+            bantuan[1].usage = 1;
+        }
+    } else if (jawaban == '3' && bantuan[2].usage == 0) {
+        printf("\tApakah anda ingin menggunakan bantuan POLL [y/n]? ");
+        scanf(" %c", &balasan);
+
+        if (balasan == 'y') {
+            bantuan_poll(no_soal);
+            bantuan[2].nama = "    ";
+            bantuan[2].usage = 1;
+        }
+    } else {
+        printf("\tAnda sudah menggunakan bantuan ini. ");
+        enterer();
+    }
 }
